@@ -1,0 +1,243 @@
+/* style.css - Premium Desktop Layout and Responsive Configurations */
+:root {
+    --raw-green: #6aaa64;
+    --raw-yellow: #c9b458;
+    --raw-dark-gray: #787c7e;
+    --raw-light-gray: #d3d6da;
+    --raw-black: #121213;
+    --raw-white: #ffffff;
+    
+    --app-bg: var(--raw-black);
+    --app-text: var(--raw-white);
+    --border-inactive: #3a3a3c;
+    --border-active: #565758;
+    --color-correct: var(--raw-green);
+    --color-present: var(--raw-yellow);
+    --color-absent: #3a3a3c;
+    --color-key-bg: #818384;
+    --color-key-text: var(--raw-white);
+    --color-modal-bg: #1e1e1f;
+    --shadow-render: rgba(0, 0, 0, 0.4);
+}
+
+body.light-theme {
+    --app-bg: var(--raw-white);
+    --app-text: var(--raw-black);
+    --border-inactive: #d3d6da;
+    --border-active: #787c7e;
+    --color-correct: var(--raw-green);
+    --color-present: var(--raw-yellow);
+    --color-absent: var(--raw-dark-gray);
+    --color-key-bg: #e4e6eb;
+    --color-key-text: var(--raw-black);
+    --color-modal-bg: var(--raw-white);
+    --shadow-render: rgba(0, 0, 0, 0.12);
+}
+
+body.high-contrast {
+    --color-correct: #f5793a;
+    --color-present: #85c0f9;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+body {
+    background-color: var(--app-bg);
+    color: var(--app-text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s linear, color 0.2s linear;
+}
+
+/* VIEWPORT CONTAINER WRAPPER - CRITICAL LAPTOP PREVENTION FIX */
+#app-viewport {
+    width: 100%;
+    max-width: 500px;
+    height: 100vh;
+    max-height: 850px; /* Forces compression on short vertical desktop windows */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0 8px;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 55px;
+    border-bottom: 1px solid var(--border-inactive);
+}
+
+.main-logo {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-align: center;
+}
+
+.header-side-pack {
+    width: 40px;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-icon-btn {
+    background: none;
+    border: none;
+    color: var(--app-text);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+}
+
+.nav-icon-btn svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+}
+
+/* GRID CONTAINER HEIGHT HANDLING */
+#game-workspace {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0;
+}
+
+#board-matrix {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    grid-gap: 5px;
+    width: 100%;
+    max-width: 310px;
+    height: 100%;
+    max-height: 370px; /* Perfectly restricts row block bloating */
+}
+
+.grid-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-gap: 5px;
+}
+
+/* PREMIUM TILES FLAT DESIGN STYLE */
+.tile-node {
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--border-inactive);
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    background-color: transparent;
+    color: var(--app-text);
+}
+
+.tile-node[data-state="tbd"] {
+    border-color: var(--border-active);
+    animation: popEffect 0.08s ease-in-out;
+}
+
+.tile-node[data-state="absent"] { background-color: var(--color-absent); border-color: var(--color-absent); color: var(--raw-white); }
+.tile-node[data-state="present"] { background-color: var(--color-present); border-color: var(--color-present); color: var(--raw-white); }
+.tile-node[data-state="correct"] { background-color: var(--color-correct); border-color: var(--color-correct); color: var(--raw-white); }
+
+/* COMPACT KEYBOARD WRAPPER CONFIG */
+#keyboard-wrapper {
+    padding-bottom: 12px;
+}
+
+.kb-line {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 6px;
+    touch-action: manipulation;
+}
+
+.kb-line:last-of-type {
+    margin-bottom: 0;
+}
+
+.input-key {
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: 0;
+    margin-right: 6px;
+    height: 52px; /* Slimmed down height parameter */
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: var(--color-key-bg);
+    color: var(--color-key-text);
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.input-key:last-of-type { margin-right: 0; }
+.input-key.extended { flex: 1.4; font-size: 0.72rem; }
+
+.input-key[data-state="absent"] { background-color: var(--color-absent); color: var(--raw-white); opacity: 0.35; }
+.input-key[data-state="present"] { background-color: var(--color-present); color: var(--raw-white); }
+.input-key[data-state="correct"] { background-color: var(--color-correct); color: var(--raw-white); }
+
+/* TOASTS AND DIALOGS */
+.modal-dimmer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-out;
+}
+
+.modal-dimmer.active { opacity: 1; pointer-events: auto; }
+.modal-card { background-color: var(--color-modal-bg); border-radius: 8px; padding: 28px; width: 90%; max-width: 410px; box-shadow: 0 4px 20px var(--shadow-render); position: relative; }
+
+.dismiss-modal-btn { position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--app-text); cursor: pointer; font-size: 18px; }
+.modal-title { font-size: 20px; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 20px; text-align: center; }
+
+.setting-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border-inactive); }
+.setting-row:last-of-type { border-bottom: none; }
+.setting-label { font-weight: 700; font-size: 15px; }
+.setting-desc { font-size: 11px; color: var(--raw-dark-gray); margin-top: 2px; }
+
+.stats-grid { display: flex; justify-content: space-between; margin: 20px 0; }
+.stat-box { text-align: center; flex: 1; }
+.stat-num { display: block; font-size: 28px; font-weight: 700; }
+.stat-txt { font-size: 10px; color: var(--raw-dark-gray); text-transform: uppercase; }
+
+.primary-action-btn { background-color: var(--raw-green); color: white; border: none; padding: 10px 20px; font-weight: 700; border-radius: 4px; cursor: pointer; display: none; margin: 15px auto 0; }
+.text-center { text-align: center; }
+
+#toast-manager { position: absolute; top: 12%; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+.toast-msg { background-color: var(--app-text); color: var(--app-bg); padding: 10px 14px; border-radius: 4px; font-weight: 700; font-size: 13px; box-shadow: 0 3px 10px rgba(0,0,0,0.25); }
+
+/* ANIMATION PARAMETERS */
+@keyframes popEffect { 0% { transform: scale(0.85); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+@keyframes shakeRow { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-3px); } 40%, 60% { transform: translateX(3px); } }
+.shake-animate { animation: shakeRow 0.45s; }
+@keyframes tileSpin { 0% { transform: rotateX(0deg); } 50% { transform: rotateX(-90deg); } 100% { transform: rotateX(0deg); } }
+.spin-animate { animation: tileSpin 0.55deg ease-in-out; }
