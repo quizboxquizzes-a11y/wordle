@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Premium Wordle</title>
+    <style>
+        /* CSS RESET & THEME DESIGN SYSTEM */
+        :root {
+            --green: #6aaa64;
+            --yellow: #c9b458;
+            --dark-gray: #787c7e;
+            --light-gray: #d3d6da;
+            --black: #121213;
+            --white: #ffffff;
+            
+            /* Dynamic UI Variables Mapping (Dark Mode Default) */
+            --bg-color: var(--black);
+            --text-color: var(--white);
+            --border-empty: #3a3a3c;
+            --border-filled: #565758;
+            --tile-bg-correct: var(--green);
+            --tile-bg-present: var(--yellow);
+            --tile-bg-absent: #3a3a3c;
+            --key-bg: #818384;
+            --key-text: var(--white);
+            --modal-bg: #1e1e1f;
+            --shadow: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Light Theme Color Swaps */
+        body.light-theme {
+            --bg-color: var(--white);
+            --text-color: var(--black);
+            --border-empty: #d3d6da;
+            --border-filled: #787c7e;
+            --tile-bg-correct: var(--green);
+            --tile-bg-present: var(--yellow);
+            --tile-bg-absent: var(--dark-gray);
+            --key-bg: #e4e6eb;
+            --key-text: var(--black);
+            --modal-bg: var(--white);
+            --shadow: rgba(0, 0, 0, 0.15);
+        }
+
+        /* High Contrast Color Swaps */
+        body.high-contrast {
+            --tile-bg-correct: #f5793a; /* Orange */
+            --tile-bg-present: #85c0f9; /* Light Blue */
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* PREMIUM NAVIGATION HEADER BAR */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 538px;
+            height: 65px;
+            border-bottom: 1px solid var(--border-empty);
+            padding: 0 16px;
+        }
+
+        header h1 {
+            font-weight: 700;
+            font-size: 32px;
+            letter-spacing: 0.05em;
+            margin: 0;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            transition: transform 0.1s ease;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.9);
+        }
+
+        .icon-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        /* CORE GRID GAMEBOARD CONTAINER */
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            height: calc(100vh - 65px);
+            padding: 20px 10px;
+        }
+
+        #board-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        #board {
+            display: grid;
+            grid-template-rows: repeat(6, 1fr);
+            grid-gap: 5px;
+            width: 330px;
+            height: 400px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-gap: 5px;
+        }
+
+        /* INTERACTIVE TILE COMPONENT STATES */
+        .tile {
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--border-empty);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            user-select: none;
+            background-color: transparent;
+            color: var(--text-color);
+        }
+
+        /* Tile Status Animations Elements */
+        .tile[data-state="tbd"] {
+            border-color: var(--border-filled);
+            animation: popIn 0.1s ease-in-out;
+        }
+
+        .tile[data-state="absent"] {
+            background-color: var(--tile-bg-absent);
+            border-color: var(--tile-bg-absent);
+            color: var(--white);
+        }
+
+        .tile[data-state="present"] {
+            background-color: var(--tile-bg-present);
+            border-color: var(--tile-bg-present);
+            color: var(--white);
+        }
+
+        .tile[data-state="correct"] {
+            background-color: var(--tile-bg-correct);
+            border-color: var(--tile-bg-correct);
+            color: var(--white);
+        }
+
+        /* ADVANCED INTERACTIVE VIRTUAL KEYBOARD */
+        #keyboard {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin: 0 auto 8px;
+            touch-action: manipulation;
+        }
+
+        .key {
+            font-size: 1.25rem;
+            font-weight: 700;
+            border: 0;
+            padding: 0;
+            margin: 0 6px 0 0;
+            height: 58px;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: var(--key-bg);
+            color: var(--key-text);
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+            transition: background-color 0.1s linear;
+        }
+
+        .key:last-of-type {
+            margin-right: 0;
+        }
+
+        .key.one-and-a-half {
+            flex: 1.5;
+            font-size: 0.75rem;
+        }
+
+        .key[data-state="absent"] { background-color: var(--tile-bg-absent); color: var(--white); opacity: 0.4; }
+        .key[data-state="present"] { background-color: var(--tile-bg-present); color: var(--white); }
+        .key[data-state="correct"] { background-color: var(--tile-bg-correct); color: var(--white); }
+
+        /* OVERLAY DIALOGS / MODAL DESIGN */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background-color: var(--modal-bg);
+            border-radius: 8px;
+            padding: 32px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 4px 23px 0 var(--shadow);
+            position: relative;
+            transform: translateY(30px);
+            transition: transform 0.25s ease;
+        }
+
+        .modal-overlay.open .modal-content {
+            transform: translateY(0);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        /* TOAST NOTIFICATION STYLING */
+        #toast-container {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+            padding: 12px 16px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.15s ease-in-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .toast.show { opacity: 1; }
+
+        /* KEYFRAME ANIMATIONS ENGINE */
+        @keyframes popIn {
+            0% { transform: scale(0.8); border-color: var(--border-empty); }
+            40% { transform: scale(1.1); }
+            100% { transform: scale(1); border-color: var(--border-filled); }
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+        .shake { animation: shake 0.5s; }
+
+        @keyframes flipIn {
+            0% { transform: rotateX(0deg); }
+            45% { transform: rotateX(-90deg); }
+            55% { transform: rotateX(-90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+        .flip { animation: flipIn 0.5s ease-in; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <button class="icon-btn" id="stats-icon-btn">
+            <svg viewBox="0 0 24 24"><path d="M16,11H18V18H16V11M11,5H13V18H11V5M6,14H8V18H6V14Z"/></svg>
+        </button>
+        <h1>WORDLE</h1>
+        <button class="icon-btn" id="settings-icon-btn">
+            <svg viewBox="0 0 24 24"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.47,5.34 14.86,5.08L14.47,2.42C14.43,2.18 14.22,2 14,2H10C9.78,2 9.57,2.18 9.53,2.42L9.14,5.08C8.53,5.34 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.95C7.96,18.34 8.53,18.66 9.14,18.92L9.14,21.58C9.57,21.82 9.78,22 10,22H14C14.22,22 14.43,21.82 14.47,21.58L14.86,18.92C15.47,18.66 16.04,18.34 16.56,17.95L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
+        </button>
+    </header>
+
+    <div id="toast-container"></div>
+
+    <div id="game-container">
+        <div id="board-wrapper">
+            <div id="board"></div>
+        </div>
+        <div id="keyboard"></div>
+    </div>
+
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-content">
+            <button class="close-btn" id="close-settings-btn">✕</button>
+            <h2>SETTINGS</h2>
+            <hr style="border: 0; border-top: 1px solid var(--border-empty); margin: 16px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <div style="font-weight: 700;">Light Theme</div>
+                </div>
+                <input type="checkbox" id="theme-switch" style="width: 40px; height: 20px; cursor: pointer;">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 700;">High Contrast Mode</div>
+                    <div style="font-size: 12px; color: var(--dark-gray);">Contrast-optimized colors</div>
+                </div>
+                <input type="checkbox" id="contrast-switch" style="width: 40px; height: 20px; cursor: pointer;">
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="stats-modal">
+        <div class="modal-content" style="text-align: center;">
+            <button class="close-btn" id="close-stats-btn">✕</button>
+            <h2>STATISTICS</h2>
+            <div style="display: flex; justify-content: space-around; margin: 24px 0;">
+                <div><div style="font-size: 32px; font-weight: 700;" id="stat-played">0</div><div style="font-size: 12px;">Played</div></div>
+                <div><div style="font-size: 32px; font-weight: 700;" id="stat-win-pct">0</div><div style="font-size: 12px;">Win %</div></div>
+                <div><div style="font-size: 32px; font-weight: 700;" id="stat-streak">0</div><div style="font-size: 12px;">Current Streak</div></div>
+                <div><div style="font-size: 32px; font-weight: 700;" id="stat-max-streak">0</div><div style="font-size: 12px;">Max Streak</div></div>
+            </div>
+            <button id="play-again-btn" style="background-color: var(--green); color: white; border: none; padding: 12px 24px; font-weight: bold; font-size: 16px; border-radius: 4px; cursor: pointer; display: none; margin: 0 auto;">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // Setup placeholders for the dynamic grid rendering
+        const board = document.getElementById("board");
+        for (let r = 0; r < 6; r++) {
+            let row = document.createElement("div");
+            row.className = "row";
+            for (let c = 0; c < 5; c++) {
+                let tile = document.createElement("div");
+                tile.className = "tile";
+                tile.id = `tile-${r}-${c}`;
+                row.appendChild(tile);
+            }
+            board.appendChild(row);
+        }
+
+        // Modal triggers binding setup
+        const setModal = document.getElementById("settings-modal");
+        const statModal = document.getElementById("stats-modal");
+        
+        document.getElementById("settings-icon-btn").onclick = () => setModal.classList.add("open");
+        document.getElementById("close-settings-btn").onclick = () => setModal.classList.remove("open");
+        document.getElementById("stats-icon-btn").onclick = () => statModal.classList.add("open");
+        document.getElementById("close-stats-btn").onclick = () => statModal.classList.remove("open");
+
+        // Theme and Contrast Switches Engine mappings
+        const themeSwitch = document.getElementById("theme-switch");
+        const contrastSwitch = document.getElementById("contrast-switch");
+
+        themeSwitch.onchange = () => document.body.classList.toggle("light-theme", themeSwitch.checked);
+        contrastSwitch.onchange = () => document.body.classList.toggle("high-contrast", contrastSwitch.checked);
+    </script>
+</body>
+</html>
