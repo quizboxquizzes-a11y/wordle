@@ -2,483 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Premium Wordle</title>
-    <style>
-        /* THEME DESIGN SYSTEM */
-        :root {
-            --green: #6aaa64;
-            --yellow: #c9b458;
-            --dark-gray: #787c7e;
-            --light-gray: #d3d6da;
-            --black: #121213;
-            --white: #ffffff;
-            
-            --bg-color: var(--black);
-            --text-color: var(--white);
-            --border-empty: #3a3a3c;
-            --border-filled: #565758;
-            --tile-bg-correct: var(--green);
-            --tile-bg-present: var(--yellow);
-            --tile-bg-absent: #3a3a3c;
-            --key-bg: #818384;
-            --key-text: var(--white);
-            --modal-bg: #1e1e1f;
-            --shadow: rgba(0, 0, 0, 0.5);
-        }
-
-        body.light-theme {
-            --bg-color: var(--white);
-            --text-color: var(--black);
-            --border-empty: #d3d6da;
-            --border-filled: #787c7e;
-            --tile-bg-correct: var(--green);
-            --tile-bg-present: var(--yellow);
-            --tile-bg-absent: var(--dark-gray);
-            --key-bg: #e4e6eb;
-            --key-text: var(--black);
-            --modal-bg: var(--white);
-            --shadow: rgba(0, 0, 0, 0.15);
-        }
-
-        body.high-contrast {
-            --tile-bg-correct: #f5793a;
-            --tile-bg-present: #85c0f9;
-        }
-
-        * { 
-            box-sizing: border-box; 
-            font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif; 
-            -webkit-tap-highlight-color: transparent; 
-        }
-        
-        body { 
-            background-color: var(--bg-color); 
-            color: var(--text-color); 
-            margin: 0; 
-            padding: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            height: 100vh; 
-            overflow: hidden; 
-        }
-
-        /* LAPTOP & DESKTOP OPTIMIZED HEADER */
-        header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            width: 100%; 
-            max-width: 500px; 
-            height: 65px; 
-            border-bottom: 1px solid var(--border-empty); 
-            padding: 0 4px; 
-        }
-        header h1 { 
-            font-weight: 700; 
-            font-size: 36px; 
-            letter-spacing: 0.05em; 
-            margin: 0; 
-            text-align: center; 
-            flex-grow: 1; 
-        }
-
-        .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; color: var(--text-color); }
-        .icon-btn svg { width: 24px; height: 24px; fill: currentColor; }
-
-        /* SCALED FOR BOTH LAPTOP SCREENS AND MOBILE DEVICE VIEWPORTS */
-        #game-container { 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
-            align-items: center; 
-            width: 100%; 
-            max-width: 500px; 
-            height: calc(100vh - 65px); 
-            padding: 15px 0 20px 0; 
-        }
-        
-        #board-wrapper { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            flex-grow: 1; 
-        }
-        
-        #board { 
-            display: grid; 
-            grid-template-rows: repeat(6, 1fr); 
-            grid-gap: 5px; 
-            width: 330px; 
-            height: 400px; 
-        }
-        
-        .row { display: grid; grid-template-columns: repeat(5, 1fr); grid-gap: 5px; }
-
-        /* TILES GRAPHICS */
-        .tile { 
-            width: 100%; 
-            height: 100%; 
-            border: 2px solid var(--border-empty); 
-            display: inline-flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-size: 2rem; 
-            font-weight: 700; 
-            text-transform: uppercase; 
-            user-select: none; 
-            background-color: transparent; 
-            color: var(--text-color); 
-            transform-style: preserve-3d;
-        }
-        
-        .tile[data-state="tbd"] { border-color: var(--border-filled); animation: popIn 0.1s ease-in-out; }
-        .tile[data-state="absent"] { background-color: var(--tile-bg-absent); border-color: var(--tile-bg-absent); color: var(--white); }
-        .tile[data-state="present"] { background-color: var(--tile-bg-present); border-color: var(--tile-bg-present); color: var(--white); }
-        .tile[data-state="correct"] { background-color: var(--tile-bg-correct); border-color: var(--tile-bg-correct); color: var(--white); }
-
-        /* KEYBOARD CONTAINER - DESKTOP COMFORT WIDTH */
-        #keyboard { 
-            width: 100%; 
-            max-width: 500px; 
-            padding: 0 8px;
-        }
-        .keyboard-row { display: flex; justify-content: center; width: 100%; margin: 0 auto 8px; touch-action: manipulation; }
-        
-        .key { 
-            font-size: 1.25rem; 
-            font-weight: 700; 
-            border: 0; 
-            padding: 0; 
-            margin: 0 6px 0 0; 
-            height: 58px; 
-            border-radius: 4px; 
-            cursor: pointer; 
-            background-color: var(--key-bg); 
-            color: var(--key-text); 
-            flex: 1; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            text-transform: uppercase; 
-            transition: background-color 0.2s ease, color 0.2s ease;
-        }
-        .key:last-of-type { margin-right: 0; }
-        .key.one-and-a-half { flex: 1.5; font-size: 0.75rem; }
-
-        .key[data-state="absent"] { background-color: var(--tile-bg-absent); color: var(--white); opacity: 0.4; }
-        .key[data-state="present"] { background-color: var(--tile-bg-present); color: var(--white); }
-        .key[data-state="correct"] { background-color: var(--tile-bg-correct); color: var(--white); }
-
-        /* MODALS & NOTIFICATIONS */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
-        .modal-overlay.open { opacity: 1; pointer-events: auto; }
-        .modal-content { background-color: var(--modal-bg); border-radius: 8px; padding: 32px; max-width: 450px; width: 90%; box-shadow: 0 4px 23px 0 var(--shadow); position: relative; transform: translateY(30px); transition: transform 0.25s ease; }
-        .modal-overlay.open .modal-content { transform: translateY(0); }
-        .close-btn { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--text-color); cursor: pointer; font-size: 20px; }
-
-        #toast-container { position: absolute; top: 10%; left: 50%; transform: translate(-50%, 0); z-index: 2000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-        .toast { background-color: var(--text-color); color: var(--bg-color); padding: 12px 16px; border-radius: 4px; font-weight: 700; font-size: 14px; opacity: 0; transition: opacity 0.15s ease-in-out; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .toast.show { opacity: 1; }
-
-        /* ENGINE ANIMATION TIMINGS */
-        @keyframes popIn { 0% { transform: scale(0.8); } 40% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        @keyframes shake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); } }
-        .shake { animation: shake 0.5s; }
-        @keyframes flipIn { 0% { transform: rotateX(0deg); } 50% { transform: rotateX(-90deg); } 100% { transform: rotateX(0deg); } }
-        .flip { animation: flipIn 0.5s ease-in-out; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wordle Premium Desktop</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <header>
-        <button class="icon-btn" id="stats-icon-btn">
-            <svg viewBox="0 0 24 24"><path d="M16,11H18V18H16V11M11,5H13V18H11V5M6,14H8V18H6V14Z"/></svg>
-        </button>
-        <h1>WORDLE</h1>
-        <button class="icon-btn" id="settings-icon-btn">
-            <svg viewBox="0 0 24 24"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.47,5.34 14.86,5.08L14.47,2.42C14.43,2.18 14.22,2 14,2H10C9.78,2 9.57,2.18 9.53,2.42L9.14,5.08C8.53,5.34 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,11.67 4.47,11.34 4.43,11L2.34,9.37Z"/></svg>
-        </button>
-    </header>
+    <div id="app-viewport">
+        
+        <header class="app-header">
+            <div class="header-side-pack">
+                <button class="nav-icon-btn" id="stats-trigger" title="Statistics">
+                    <svg viewBox="0 0 24 24"><path d="M16,11H18V18H16V11M11,5H13V18H11V5M6,14H8V18H6V14Z"/></svg>
+                </button>
+            </div>
+            <h1 class="main-logo">WORDLE</h1>
+            <div class="header-side-pack">
+                <button class="nav-icon-btn" id="settings-trigger" title="Settings">
+                    <svg viewBox="0 0 24 24"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.47,5.34 14.86,5.08L14.47,2.42C14.43,2.18 14.22,2 14,2H10C9.78,2 9.57,2.18 9.53,2.42L9.14,5.08C8.53,5.34 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.95C7.96,18.34 8.53,18.66 9.14,18.92L9.14,21.58C9.57,21.82 9.78,22 10,22H14C14.22,22 14.43,21.82 14.47,21.58L14.86,18.92C15.47,18.66 16.04,18.34 16.56,17.95L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
+                </button>
+            </div>
+        </header>
 
-    <div id="toast-container"></div>
+        <div id="toast-manager"></div>
 
-    <div id="game-container">
-        <div id="board-wrapper"><div id="board"></div></div>
-        <div id="keyboard"></div>
+        <main id="game-workspace">
+            <div id="board-matrix"></div>
+        </main>
+
+        <footer id="keyboard-wrapper">
+            <div id="virtual-keyboard"></div>
+        </footer>
     </div>
 
-    <div class="modal-overlay" id="settings-modal">
-        <div class="modal-content">
-            <button class="close-btn" id="close-settings-btn">✕</button>
-            <h2>SETTINGS</h2>
-            <hr style="border: 0; border-top: 1px solid var(--border-empty); margin: 16px 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div><div style="font-weight: 700;">Light Theme</div></div>
-                <input type="checkbox" id="theme-switch" style="width: 40px; height: 20px; cursor: pointer;">
+    <div class="modal-dimmer" id="settings-overlay">
+        <div class="modal-card">
+            <button class="dismiss-modal-btn" id="hide-settings">✕</button>
+            <h2 class="modal-title">SETTINGS</h2>
+            <div class="setting-row">
+                <span class="setting-label">Light UI Interface</span>
+                <label class="switch-control">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider-round"></span>
+                </label>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="setting-row">
                 <div>
-                    <div style="font-weight: 700;">High Contrast Mode</div>
-                    <div style="font-size: 12px; color: var(--dark-gray);">Optimized visual contrast</div>
+                    <span class="setting-label">High Contrast Access</span>
+                    <p class="setting-desc">Applies color-blind accessible feedback tokens</p>
                 </div>
-                <input type="checkbox" id="contrast-switch" style="width: 40px; height: 20px; cursor: pointer;">
+                <label class="switch-control">
+                    <input type="checkbox" id="contrast-toggle">
+                    <span class="slider-round"></span>
+                </label>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="stats-modal">
-        <div class="modal-content" style="text-align: center;">
-            <button class="close-btn" id="close-stats-btn">✕</button>
-            <h2>STATISTICS</h2>
-            <div style="display: flex; justify-content: space-around; margin: 24px 0;">
-                <div><div style="font-size: 32px; font-weight: 700;" id="stat-played">0</div><div style="font-size: 12px;">Played</div></div>
-                <div><div style="font-size: 32px; font-weight: 700;" id="stat-win-pct">0</div><div style="font-size: 12px;">Win %</div></div>
-                <div><div style="font-size: 32px; font-weight: 700;" id="stat-streak">0</div><div style="font-size: 12px;">Current Streak</div></div>
-                <div><div style="font-size: 32px; font-weight: 700;" id="stat-max-streak">0</div><div style="font-size: 12px;">Max Streak</div></div>
+    <div class="modal-dimmer" id="stats-overlay">
+        <div class="modal-card text-center">
+            <button class="dismiss-modal-btn" id="hide-stats">✕</button>
+            <h2 class="modal-title">STATISTICS</h2>
+            <div class="stats-grid">
+                <div class="stat-box"><span class="stat-num" id="val-played">0</span><span class="stat-txt">Played</span></div>
+                <div class="stat-box"><span class="stat-num" id="val-pct">0</span><span class="stat-txt">Win %</span></div>
+                <div class="stat-box"><span class="stat-num" id="val-streak">0</span><span class="stat-txt">Current Streak</span></div>
+                <div class="stat-box"><span class="stat-num" id="val-max">0</span><span class="stat-txt">Max Streak</span></div>
             </div>
-            <button id="play-again-btn" style="background-color: var(--green); color: white; border: none; padding: 12px 24px; font-weight: bold; font-size: 16px; border-radius: 4px; cursor: pointer; display: none; margin: 20px auto 0;">PLAY AGAIN</button>
+            <button id="action-play-again" class="primary-action-btn">PLAY AGAIN</button>
         </div>
     </div>
 
     <script src="words.js"></script>
-    <script>
-        let targetWord = "";
-        let currentRow = 0;
-        let currentCol = 0;
-        let isGameOver = false;
-
-        const board = document.getElementById("board");
-        const keyboard = document.getElementById("keyboard");
-        const toastContainer = document.getElementById("toast-container");
-        const playAgainBtn = document.getElementById("play-again-btn");
-
-        let stats = JSON.parse(localStorage.getItem("wordle-stats")) || { played: 0, won: 0, streak: 0, maxStreak: 0 };
-
-        async function initGame() {
-            await loadWordLists();
-            buildBoard();
-            buildKeyboard();
-            resetGameSession();
-        }
-
-        function buildBoard() {
-            board.innerHTML = "";
-            for (let r = 0; r < 6; r++) {
-                let row = document.createElement("div");
-                row.className = "row";
-                for (let c = 0; c < 5; c++) {
-                    let tile = document.createElement("div");
-                    tile.className = "tile";
-                    tile.id = `tile-${r}-${c}`;
-                    row.appendChild(tile);
-                }
-                board.appendChild(row);
-            }
-        }
-
-        const keyLayout = [
-            ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-            ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-            ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "⌫"]
-        ];
-
-        function buildKeyboard() {
-            keyboard.innerHTML = "";
-            keyLayout.forEach(row => {
-                let rowEl = document.createElement("div");
-                rowEl.className = "keyboard-row";
-                row.forEach(key => {
-                    let keyEl = document.createElement("button");
-                    keyEl.className = "key";
-                    keyEl.textContent = key;
-                    keyEl.id = `key-${key}`;
-                    if (key === "ENTER" || key === "⌫") keyEl.classList.add("one-and-a-half");
-                    keyEl.onclick = () => processInput(key);
-                    rowEl.appendChild(keyEl);
-                });
-                keyboard.appendChild(rowEl);
-            });
-        }
-
-        function resetGameSession() {
-            const list = window.WORDLE_DICTIONARY.TARGET_WORDS;
-            targetWord = list[Math.floor(Math.random() * list.length)];
-            currentRow = 0;
-            currentCol = 0;
-            isGameOver = false;
-            playAgainBtn.style.display = "none";
-            buildBoard();
-            buildKeyboard();
-        }
-
-        function processInput(key) {
-            if (isGameOver) return;
-            if (key === "⌫" || key === "Backspace") {
-                if (currentCol > 0) {
-                    currentCol--;
-                    let tile = document.getElementById(`tile-${currentRow}-${currentCol}`);
-                    tile.textContent = "";
-                    tile.removeAttribute("data-state");
-                }
-                return;
-            }
-            if (key === "ENTER" || key === "Enter") {
-                commitGuess();
-                return;
-            }
-            if (key.length === 1 && key.match(/[A-Z]/i) && currentCol < 5) {
-                let tile = document.getElementById(`tile-${currentRow}-${currentCol}`);
-                tile.textContent = key.toUpperCase();
-                tile.setAttribute("data-state", "tbd");
-                currentCol++;
-            }
-        }
-
-        function showToast(message, duration = 2000) {
-            let toast = document.createElement("div");
-            toast.className = "toast show";
-            toast.textContent = message;
-            toastContainer.appendChild(toast);
-            setTimeout(() => { toast.classList.remove("show"); toast.remove(); }, duration);
-        }
-
-        function commitGuess() {
-            if (currentCol !== 5) {
-                showToast("Not enough letters");
-                shakeRow();
-                return;
-            }
-
-            let guess = "";
-            for (let c = 0; c < 5; c++) {
-                guess += document.getElementById(`tile-${currentRow}-${c}`).textContent;
-            }
-
-            if (!window.WORDLE_DICTIONARY.ALL_WORDS.includes(guess)) {
-                showToast("Not in word list");
-                shakeRow();
-                return;
-            }
-
-            evaluateGuessLogic(guess);
-        }
-
-        function evaluateGuessLogic(guess) {
-            let targetArr = targetWord.split("");
-            let guessArr = guess.split("");
-            let states = ["absent", "absent", "absent", "absent", "absent"];
-
-            // Green Logic Pass
-            for (let i = 0; i < 5; i++) {
-                if (guessArr[i] === targetArr[i]) {
-                    states[i] = "correct";
-                    targetArr[i] = null;
-                }
-            }
-
-            // Yellow Logic Pass
-            for (let i = 0; i < 5; i++) {
-                if (states[i] === "correct") continue;
-                let lookIdx = targetArr.indexOf(guessArr[i]);
-                if (lookIdx !== -1) {
-                    states[i] = "present";
-                    targetArr[lookIdx] = null;
-                }
-            }
-
-            // Staggered grid flips
-            for (let i = 0; i < 5; i++) {
-                let tile = document.getElementById(`tile-${currentRow}-${i}`);
-                setTimeout(() => {
-                    tile.classList.add("flip");
-                    // Swap background style halfway through rotation
-                    setTimeout(() => {
-                        tile.setAttribute("data-state", states[i]);
-                    }, 250);
-                }, i * 250);
-            }
-
-            // CRITICAL FIX: Keyboard keys update color ONLY AFTER the final fifth tile completes flipping
-            setTimeout(() => {
-                for (let i = 0; i < 5; i++) {
-                    updateKeyStatus(guessArr[i], states[i]);
-                }
-
-                if (guess === targetWord) {
-                    showToast("Splendid!");
-                    updateScores(true);
-                } else {
-                    currentRow++;
-                    currentCol = 0;
-                    if (currentRow === 6) {
-                        showToast(`The word was: ${targetWord}`, 4000);
-                        updateScores(false);
-                    }
-                }
-            }, (4 * 250) + 500); // Wait time matches the exact finalization of the fifth tile flip animation
-        }
-
-        function updateKeyStatus(letter, state) {
-            let key = document.getElementById(`key-${letter}`);
-            if (!key) return;
-            let cur = key.getAttribute("data-state");
-            if (cur === "correct") return;
-            if (cur === "present" && state === "absent") return;
-            key.setAttribute("data-state", state);
-        }
-
-        function shakeRow() {
-            let elements = board.childNodes[currentRow].childNodes;
-            elements.forEach(el => {
-                el.classList.remove("shake");
-                void el.offsetWidth;
-                el.classList.add("shake");
-            });
-        }
-
-        function updateScores(win) {
-            isGameOver = true;
-            stats.played++;
-            if (win) {
-                stats.won++;
-                stats.streak++;
-                if (stats.streak > stats.maxStreak) stats.maxStreak = stats.streak;
-            } else {
-                stats.streak = 0;
-            }
-            localStorage.setItem("wordle-stats", JSON.stringify(stats));
-            
-            document.getElementById("stat-played").textContent = stats.played;
-            document.getElementById("stat-win-pct").textContent = Math.round((stats.won / stats.played) * 100);
-            document.getElementById("stat-streak").textContent = stats.streak;
-            document.getElementById("stat-max-streak").textContent = stats.maxStreak;
-            
-            setTimeout(() => {
-                document.getElementById("stats-modal").classList.add("open");
-                playAgainBtn.style.display = "block";
-            }, 1000);
-        }
-
-        window.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") processInput("ENTER");
-            else if (e.key === "Backspace") processInput("⌫");
-            else if (e.key.length === 1 && e.key.match(/[a-z]/i)) processInput(e.key.toUpperCase());
-        });
-
-        const sM = document.getElementById("settings-modal");
-        const stM = document.getElementById("stats-modal");
-        document.getElementById("settings-icon-btn").onclick = () => sM.classList.add("open");
-        document.getElementById("close-settings-btn").onclick = () => sM.classList.remove("open");
-        document.getElementById("stats-icon-btn").onclick = () => stM.classList.add("open");
-        document.getElementById("close-stats-btn").onclick = () => stM.classList.remove("open");
-        
-        document.getElementById("theme-switch").onchange = (e) => document.body.classList.toggle("light-theme", e.target.checked);
-        document.getElementById("contrast-switch").onchange = (e) => document.body.classList.toggle("high-contrast", e.target.checked);
-        playAgainBtn.onclick = () => { stM.classList.remove("open"); resetGameSession(); };
-
-        initGame();
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
